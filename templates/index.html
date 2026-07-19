@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firmenwagen Ladeabrechnung</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #1e1b4b 100%);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --accent: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            --card-bg: rgba(30, 41, 59, 0.6);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: rgba(15, 23, 42, 0.6);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            backdrop-filter: blur(16px);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            font-weight: 300;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Drag and drop area */
+        .upload-area {
+            border: 2px dashed var(--input-border);
+            border-radius: 16px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            background: var(--input-bg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.05);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            transition: transform 0.2s ease;
+        }
+
+        .upload-area:hover .upload-icon {
+            transform: translateY(-4px);
+        }
+
+        .upload-text {
+            font-size: 1rem;
+            color: var(--text-main);
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .upload-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* File list and Month checkboxes */
+        .month-selector {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--input-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: none; /* hidden until file uploaded */
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .month-selector h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 0.75rem;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        /* Custom Scrollbar */
+        .month-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+        .month-grid::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .month-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--input-border);
+            padding: 0.75rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .checkbox-container:hover {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .checkbox-container input {
+            margin-right: 0.75rem;
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+        }
+
+        .checkbox-container span {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 14px;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+            text-align: center;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            background: var(--input-border);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #status-message {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        #status-message.success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success);
+            color: #34d399;
+            display: block;
+        }
+
+        #status-message.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--error);
+            color: #f87171;
+            display: block;
+        }
+
+        #status-message.info {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid var(--primary);
+            color: #60a5fa;
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Ladekosten Abrechnung</h1>
+        <p>Erstelle PDF-Nachweise für deinen Arbeitgeber aus dem ABB CSV-Export</p>
+    </header>
+
+    <form id="report-form" enctype="multipart/form-data">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="employee_name">Fahrer Name</label>
+                <input type="text" id="employee_name" name="employee_name" placeholder="z.B. Max Mustermann" required>
+            </div>
+            <div class="form-group">
+                <label for="license_plate">Fahrzeug-Kennzeichen</label>
+                <input type="text" id="license_plate" name="license_plate" placeholder="z.B. M-AB-1234E">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="price_per_kwh">Strompreis (€ / kWh)</label>
+            <input type="number" id="price_per_kwh" name="price_per_kwh" step="0.0001" min="0" placeholder="z.B. 0.2755" required>
+        </div>
+
+        <input type="file" id="csv-file" name="file" accept=".csv" style="display: none;">
+        
+        <div class="upload-area" id="drop-zone">
+            <div class="upload-icon">📥</div>
+            <div class="upload-text" id="file-info-text">CSV-Export hierhin ziehen oder anklicken</div>
+            <div class="upload-hint">Unterstützt nur original ABB/Chargedot .csv Dateien</div>
+        </div>
+
+        <div class="month-selector" id="month-selector">
+            <h3>Wähle die Abrechnungsmonate aus:</h3>
+            <div class="month-grid" id="month-grid">
+                <!-- Checkboxen werden dynamisch per JS eingefügt -->
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn" disabled>PDF-Report generieren</button>
+    </form>
+
+    <div id="status-message"></div>
+</div>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('csv-file');
+    const fileInfoText = document.getElementById('file-info-text');
+    const monthSelector = document.getElementById('month-selector');
+    const monthGrid = document.getElementById('month-grid');
+    const submitBtn = document.getElementById('submit-btn');
+    const statusMessage = document.getElementById('status-message');
+    const form = document.getElementById('report-form');
+
+    let currentFile = null;
+
+    // Standardkonfiguration beim Laden abrufen
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch('/config');
+            if (response.ok) {
+                const config = await response.json();
+                document.getElementById('employee_name').value = config.employee_name || '';
+                document.getElementById('license_plate').value = config.license_plate || '';
+                document.getElementById('price_per_kwh').value = config.price_per_kwh || 0.2755;
+            }
+        } catch (err) {
+            console.error('Konnte Config nicht laden:', err);
+        }
+    });
+
+    // Drag and Drop Events
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'));
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            handleFile(fileInput.files[0]);
+        }
+    });
+
+    // Datei analysieren
+    async function handleFile(file) {
+        if (!file.name.endsWith('.csv')) {
+            showStatus('Bitte wähle eine gültige CSV-Datei aus.', 'error');
+            return;
+        }
+
+        currentFile = file;
+        fileInfoText.textContent = `Ausgewählt: ${file.name}`;
+        showStatus('Analysiere Datei...', 'info');
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.detail || 'Fehler beim Analysieren der Datei.');
+            }
+
+            const data = await response.json();
+            const months = data.months;
+
+            if (months.length === 0) {
+                throw new Error('Keine gültigen Ladesessions in der Datei gefunden.');
+            }
+
+            // Month Grid befüllen
+            monthGrid.innerHTML = '';
+            months.forEach(month => {
+                // Deutsche Monatsnamen Mapper
+                const [year, m] = month.split('-');
+                const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+                const readableName = `${monthNames[parseInt(m) - 1]} ${year}`;
+
+                const label = document.createElement('label');
+                label.className = 'checkbox-container';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = 'months';
+                checkbox.value = month;
+                checkbox.checked = true; // standardmäßig ausgewählt
+
+                const span = document.createElement('span');
+                span.textContent = readableName;
+
+                label.appendChild(checkbox);
+                label.appendChild(span);
+                monthGrid.appendChild(label);
+            });
+
+            monthSelector.style.display = 'block';
+            submitBtn.disabled = false;
+            showStatus('Analyse erfolgreich! Wähle die Monate und klicke auf Generieren.', 'success');
+
+        } catch (err) {
+            showStatus(err.message, 'error');
+            monthSelector.style.display = 'none';
+            submitBtn.disabled = true;
+            currentFile = null;
+            fileInfoText.textContent = 'CSV-Export hierhin ziehen oder anklicken';
+        }
+    }
+
+    // PDF Generierung abschicken
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!currentFile) {
+            showStatus('Bitte wähle zuerst eine CSV-Datei aus.', 'error');
+            return;
+        }
+
+        // Ausgewählte Monate sammeln
+        const checkedMonths = Array.from(document.querySelectorAll('input[name="months"]:checked'))
+            .map(cb => cb.value);
+
+        if (checkedMonths.length === 0) {
+            showStatus('Bitte wähle mindestens einen Abrechnungsmonat aus.', 'error');
+            return;
+        }
+
+        showStatus('Generiere PDF-Berichte...', 'info');
+
+        const formData = new FormData();
+        formData.append('file', currentFile);
+        formData.append('employee_name', document.getElementById('employee_name').value);
+        formData.append('license_plate', document.getElementById('license_plate').value);
+        formData.append('price_per_kwh', document.getElementById('price_per_kwh').value);
+        formData.append('months', JSON.stringify(checkedMonths));
+
+        try {
+            const response = await fetch('/generate', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.detail || 'Fehler beim Generieren der Berichte.');
+            }
+
+            // ZIP oder PDF herunterladen
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // Dateiname bestimmen
+            let filename = 'Ladeberichte.zip';
+            if (checkedMonths.length === 1) {
+                const empName = document.getElementById('employee_name').value.replace(' ', '_');
+                filename = `Ladenachweis_${checkedMonths[0]}_${empName}.pdf`;
+            }
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            showStatus('Berichte erfolgreich generiert und Download gestartet!', 'success');
+
+        } catch (err) {
+            showStatus(err.message, 'error');
+        }
+    });
+
+    function showStatus(message, type) {
+        statusMessage.textContent = message;
+        statusMessage.className = '';
+        statusMessage.classList.add(type);
+    }
+</script>
+</body>
+</html>

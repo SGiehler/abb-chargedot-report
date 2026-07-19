@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./reports:/app/reports
+    environment:
+      - DEFAULT_EMPLOYEE_NAME=${DEFAULT_EMPLOYEE_NAME:-Dein Name}
+      - DEFAULT_LICENSE_PLATE=${DEFAULT_LICENSE_PLATE:-}
+      - DEFAULT_PRICE_PER_KWH=${DEFAULT_PRICE_PER_KWH:-0.2755}
+      - OUTPUT_DIR=/app/reports
+    restart: unless-stopped

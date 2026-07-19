@@ -1,0 +1,22 @@
+[project]
+name = "abb-chargedot-report"
+version = "0.1.0"
+description = "Generiert PDF-Reports für Firmenwagen-Ladesessions aus ABB/Chargedot CSV-Dateien"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0.0",
+    "reportlab>=4.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.22.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.6",
+    "python-dotenv>=1.0.0"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["main", "config", "pdf_generator"]
