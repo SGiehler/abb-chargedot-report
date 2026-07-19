@@ -63,6 +63,23 @@ class PDFReportGenerator:
             self.df['Energy Delivered(kW·h)'], 
             errors='coerce'
         ).fillna(0.0)
+
+        # Dauer einlesen und in Float umwandeln
+        if 'Duration(h)' not in self.df.columns:
+            matched_duration_col = None
+            for c in self.df.columns:
+                if 'duration' in c.lower():
+                    matched_duration_col = c
+                    break
+            if matched_duration_col:
+                self.df.rename(columns={matched_duration_col: 'Duration(h)'}, inplace=True)
+            else:
+                self.df['Duration(h)'] = 0.0
+
+        self.df['Duration(h)'] = pd.to_numeric(
+            self.df['Duration(h)'], 
+            errors='coerce'
+        ).fillna(0.0)
         
         # Spalten für Berechnungen hinzufügen
         self.df['Calculated Cost'] = self.df['Energy Delivered(kW·h)'] * self.price_per_kwh
@@ -189,7 +206,7 @@ class PDFReportGenerator:
         meta_data = [
             [Paragraph("Fahrer:", header_table_style), Paragraph(self.employee_name, body_style)],
             [Paragraph("Fahrzeug-Kennzeichen:", header_table_style), Paragraph(self.license_plate if self.license_plate else "Nicht angegeben", body_style)],
-            [Paragraph("Erstattungs-Tarif:", header_table_style), Paragraph(f"{self.price_per_kwh:.4f} € / kWh (Netto/Brutto laut Vereinbarung)", body_style)],
+            [Paragraph("Erstattungs-Tarif:", header_table_style), Paragraph(f"{self.price_per_kwh:.4f} € / kWh", body_style)],
             [Paragraph("Erstellungsdatum:", header_table_style), Paragraph(datetime.now().strftime('%d.%m.%Y %H:%M'), body_style)]
         ]
         
@@ -209,26 +226,31 @@ class PDFReportGenerator:
         table_data = [[
             Paragraph("Datum / Uhrzeit (Start)", table_header_style),
             Paragraph("Ladestation (Alias)", table_header_style),
+            Paragraph("Dauer (h)", table_header_style),
             Paragraph("Energie (kWh)", table_header_style),
             Paragraph("Betrag (€)", table_header_style)
         ]]
         
         # Zeilen hinzufügen
         total_kwh = 0.0
+        total_duration = 0.0
         total_cost = 0.0
         
         for idx, row in month_data.iterrows():
             date_str = row['Parsed Start Time'].strftime('%d.%m.%Y %H:%M')
             alias = str(row['Charger Alias']) if pd.notna(row['Charger Alias']) else "Unbekannt"
+            duration = row['Duration(h)']
             kwh = row['Energy Delivered(kW·h)']
             cost = row['Calculated Cost']
             
             total_kwh += kwh
+            total_duration += duration
             total_cost += cost
             
             table_data.append([
                 Paragraph(date_str, table_cell_style),
                 Paragraph(alias, table_cell_style),
+                Paragraph(f"{duration:.2f}", table_cell_style),
                 Paragraph(f"{kwh:.3f}", table_cell_style),
                 Paragraph(f"{cost:.2f} €", table_cell_style)
             ])
@@ -237,12 +259,13 @@ class PDFReportGenerator:
         table_data.append([
             Paragraph("Gesamtsumme", table_cell_bold_style),
             Paragraph("", table_cell_style),
+            Paragraph(f"{total_duration:.2f}", table_cell_bold_style),
             Paragraph(f"{total_kwh:.3f}", table_cell_bold_style),
             Paragraph(f"{total_cost:.2f} €", table_cell_bold_style)
         ])
         
         # Spaltenbreiten (A4 Nutzbreite ist ca. 17cm bei 2x2cm Margins)
-        cols_width = [4.5*cm, 6.5*cm, 3.0*cm, 3.0*cm]
+        cols_width = [4.2*cm, 5.0*cm, 2.2*cm, 2.8*cm, 2.8*cm]
         
         charging_table = Table(table_data, colWidths=cols_width, repeatRows=1)
         
