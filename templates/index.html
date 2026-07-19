@@ -331,6 +331,14 @@
             <input type="number" id="price_per_kwh" name="price_per_kwh" step="0.0001" min="0" placeholder="z.B. 0.2755" required>
         </div>
 
+        <div class="form-group">
+            <label for="signature_file">Digitale Unterschrift (Bild-Datei, optional)</label>
+            <input type="file" id="signature_file" name="signature_file" accept=".png,.jpg,.jpeg">
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                Optional: Lade ein Bild deiner Unterschrift hoch (PNG/JPG), um sie direkt auf das PDF zu drucken.
+            </div>
+        </div>
+
         <input type="file" id="csv-file" name="file" accept=".csv" style="display: none;">
         
         <div class="upload-area" id="drop-zone">
@@ -501,6 +509,11 @@
         formData.append('license_plate', document.getElementById('license_plate').value);
         formData.append('price_per_kwh', document.getElementById('price_per_kwh').value);
         formData.append('months', JSON.stringify(checkedMonths));
+
+        const sigFileInput = document.getElementById('signature_file');
+        if (sigFileInput.files.length > 0) {
+            formData.append('signature_file', sigFileInput.files[0]);
+        }
 
         try {
             const response = await fetch('/generate', {

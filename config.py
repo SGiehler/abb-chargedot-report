@@ -10,6 +10,7 @@ class Config:
     LICENSE_PLATE = os.getenv("DEFAULT_LICENSE_PLATE", "")
     PRICE_PER_KWH = float(os.getenv("DEFAULT_PRICE_PER_KWH", "0.2755"))
     OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "reports"))
+    ENABLE_SUPERVISOR_SIGNATURE = os.getenv("ENABLE_SUPERVISOR_SIGNATURE", "false").lower() in ("true", "1", "yes")
 
     @classmethod
     def to_dict(cls):
@@ -17,5 +18,6 @@ class Config:
             "employee_name": cls.EMPLOYEE_NAME,
             "license_plate": cls.LICENSE_PLATE,
             "price_per_kwh": cls.PRICE_PER_KWH,
-            "output_dir": str(cls.OUTPUT_DIR)
+            "output_dir": str(cls.OUTPUT_DIR),
+            "enable_supervisor_signature": cls.ENABLE_SUPERVISOR_SIGNATURE
         }

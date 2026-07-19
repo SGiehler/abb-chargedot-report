@@ -5,16 +5,18 @@ from datetime import datetime
 
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 
 class PDFReportGenerator:
-    def __init__(self, csv_path: str, price_per_kwh: float, employee_name: str, license_plate: str = ""):
+    def __init__(self, csv_path: str, price_per_kwh: float, employee_name: str, license_plate: str = "", enable_supervisor_sig: bool = False, signature_image_path: str = None):
         self.csv_path = Path(csv_path)
         self.price_per_kwh = price_per_kwh
         self.employee_name = employee_name
         self.license_plate = license_plate
+        self.enable_supervisor_sig = enable_supervisor_sig
+        self.signature_image_path = signature_image_path
         self.df = None
         self._load_data()
 
@@ -301,18 +303,45 @@ class PDFReportGenerator:
         elements.append(Paragraph(summary_text, body_style))
         elements.append(Spacer(1, 30))
         
-        # Unterschriftenfelder
-        sig_data = [
-            [
-                Paragraph("___________________________________<br/>Datum, Unterschrift Mitarbeiter", body_style),
+        # Unterschriftenfelder vorbereiten
+        sig_date = datetime.now().strftime('%d.%m.%Y')
+        
+        # Mitarbeiter-Zelle
+        emp_cell_content = []
+        sig_img_flowable = None
+        if self.signature_image_path and os.path.exists(self.signature_image_path):
+            try:
+                sig_img_flowable = RLImage(self.signature_image_path, width=4.5*cm, height=1.5*cm)
+                sig_img_flowable.hAlign = 'LEFT'
+            except Exception as e:
+                print(f"Fehler beim Laden des Unterschriftenbildes: {e}")
+                
+        if sig_img_flowable:
+            emp_cell_content.append(sig_img_flowable)
+            emp_cell_content.append(Spacer(1, 0.1*cm))
+        else:
+            emp_cell_content.append(Spacer(1, 1.6*cm))
+            
+        emp_cell_content.append(Paragraph(f"{sig_date}, ___________________________________<br/>Datum, Unterschrift Mitarbeiter", body_style))
+        
+        # Tabelle für die Unterschrift aufbauen
+        if self.enable_supervisor_sig:
+            supervisor_cell_content = [
+                Spacer(1, 1.6*cm),
                 Paragraph("___________________________________<br/>Datum, Unterschrift Vorgesetzter", body_style)
             ]
-        ]
-        sig_table = Table(sig_data, colWidths=[8.5*cm, 8.5*cm])
+            sig_data = [[emp_cell_content, supervisor_cell_content]]
+            sig_table = Table(sig_data, colWidths=[8.5*cm, 8.5*cm])
+        else:
+            sig_data = [[emp_cell_content]]
+            sig_table = Table(sig_data, colWidths=[17*cm])
+            
         sig_table.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
             ('LEFTPADDING', (0,0), (-1,-1), 0),
             ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+            ('TOPPADDING', (0,0), (-1,-1), 0),
         ]))
         
         # Zusammenhalten von Zusammenfassung & Unterschrift, damit sie nicht auf eine leere Folgeseite rutschen

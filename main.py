@@ -65,6 +65,7 @@ async def upload_csv(file: UploadFile = File(...)):
 @app.post("/generate")
 async def generate_reports(
     file: UploadFile = File(...),
+    signature_file: UploadFile = File(None),  # Optionales Unterschriftenbild
     employee_name: str = Form(...),
     license_plate: str = Form(""),
     price_per_kwh: float = Form(0.2755),
@@ -85,6 +86,16 @@ async def generate_reports(
         tmp.write(content)
         tmp_path = tmp.name
 
+    # Unterschriftenbild temporär speichern falls vorhanden
+    sig_image_path = None
+    if signature_file and signature_file.filename:
+        suffix = Path(signature_file.filename).suffix
+        if suffix.lower() in ('.png', '.jpg', '.jpeg'):
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_sig:
+                content = await signature_file.read()
+                tmp_sig.write(content)
+                sig_image_path = tmp_sig.name
+
     # Temporäres Verzeichnis für die PDF-Erstellung erstellen
     temp_dir = tempfile.TemporaryDirectory()
     temp_dir_path = Path(temp_dir.name)
@@ -95,7 +106,9 @@ async def generate_reports(
             csv_path=tmp_path,
             price_per_kwh=price_per_kwh,
             employee_name=employee_name,
-            license_plate=license_plate
+            license_plate=license_plate,
+            enable_supervisor_sig=Config.ENABLE_SUPERVISOR_SIGNATURE,
+            signature_image_path=sig_image_path
         )
 
         generated_files = []
@@ -106,6 +119,9 @@ async def generate_reports(
         # Aufräumen der temporären CSV-Datei
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
+        # Aufräumen des temporären Unterschriftenbildes
+        if sig_image_path and os.path.exists(sig_image_path):
+            os.remove(sig_image_path)
 
         local_output_dir = Config.OUTPUT_DIR
         local_output_dir.mkdir(parents=True, exist_ok=True)
@@ -147,9 +163,11 @@ async def generate_reports(
             )
 
     except Exception as e:
-        # Falls Fehler auftreten, temporäre CSV löschen
+        # Falls Fehler auftreten, temporäre Dateien löschen
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
+        if 'sig_image_path' in locals() and sig_image_path and os.path.exists(sig_image_path):
+            os.remove(sig_image_path)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -188,11 +206,14 @@ def run_cli(args):
     print("-" * 50)
 
     try:
+        enable_supervisor = args.enable_supervisor or Config.ENABLE_SUPERVISOR_SIGNATURE
         generator = PDFReportGenerator(
             csv_path=csv_path,
             price_per_kwh=price,
             employee_name=employee,
-            license_plate=license_plate
+            license_plate=license_plate,
+            enable_supervisor_sig=enable_supervisor,
+            signature_image_path=args.signature_image
         )
 
         available_months = generator.get_available_months()
@@ -239,6 +260,8 @@ def main():
     cli_parser.add_argument("--employee", help="Name des Fahrers (Standard: aus config)")
     cli_parser.add_argument("--license-plate", help="Fahrzeug-Kennzeichen (Standard: aus config)")
     cli_parser.add_argument("--output-dir", help="Speicherort für die PDFs (Standard: reports)")
+    cli_parser.add_argument("--signature-image", help="Pfad zu einem Bild der Unterschrift (z.B. PNG)")
+    cli_parser.add_argument("--enable-supervisor", action="store_true", help="Unterschrift des Vorgesetzten anzeigen (Standard: deaktiviert)")
 
     # Web Parser
     web_parser = subparsers.add_parser("web", help="Startet die Web-UI (FastAPI)")
