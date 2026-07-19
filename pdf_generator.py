@@ -306,8 +306,7 @@ class PDFReportGenerator:
         # Unterschriftenfelder vorbereiten
         sig_date = datetime.now().strftime('%d.%m.%Y')
         
-        # Mitarbeiter-Zelle
-        emp_cell_content = []
+        # Unterschriftenbild laden falls vorhanden
         sig_img_flowable = None
         if self.signature_image_path and os.path.exists(self.signature_image_path):
             try:
@@ -315,25 +314,45 @@ class PDFReportGenerator:
                 sig_img_flowable.hAlign = 'LEFT'
             except Exception as e:
                 print(f"Fehler beim Laden des Unterschriftenbildes: {e}")
-                
-        if sig_img_flowable:
-            emp_cell_content.append(sig_img_flowable)
-            emp_cell_content.append(Spacer(1, 0.1*cm))
-        else:
-            emp_cell_content.append(Spacer(1, 1.6*cm))
-            
-        emp_cell_content.append(Paragraph(f"{sig_date}, ___________________________________<br/>Datum, Unterschrift Mitarbeiter", body_style))
-        
-        # Tabelle für die Unterschrift aufbauen
+
+        # Mitarbeiter Unterschriften-Block als Tabelle für perfektes Alignment
+        emp_data = [
+            ["", sig_img_flowable if sig_img_flowable else Spacer(1, 1.5*cm)],
+            [Paragraph(sig_date, body_style), Paragraph("______________________", body_style)],
+            [Paragraph("Datum, Unterschrift Mitarbeiter", body_style), ""]
+        ]
+        emp_sig_block = Table(emp_data, colWidths=[2.2*cm, 5.8*cm])
+        emp_sig_block.setStyle(TableStyle([
+            ('SPAN', (0, 2), (1, 2)),
+            ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
+            ('LEFTPADDING', (0,0), (-1,-1), 0),
+            ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+            ('TOPPADDING', (0,0), (-1,-1), 0),
+        ]))
+
+        # Haupt-Tabelle für die Unterschriften aufbauen
         if self.enable_supervisor_sig:
-            supervisor_cell_content = [
-                Spacer(1, 1.6*cm),
-                Paragraph("___________________________________<br/>Datum, Unterschrift Vorgesetzter", body_style)
+            # Vorgesetzten Unterschriften-Block
+            supervisor_data = [
+                ["", Spacer(1, 1.5*cm)],
+                ["", Paragraph("______________________", body_style)],
+                [Paragraph("Datum, Unterschrift Vorgesetzter", body_style), ""]
             ]
-            sig_data = [[emp_cell_content, supervisor_cell_content]]
+            supervisor_sig_block = Table(supervisor_data, colWidths=[2.2*cm, 5.8*cm])
+            supervisor_sig_block.setStyle(TableStyle([
+                ('SPAN', (0, 2), (1, 2)),
+                ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
+                ('LEFTPADDING', (0,0), (-1,-1), 0),
+                ('RIGHTPADDING', (0,0), (-1,-1), 0),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+                ('TOPPADDING', (0,0), (-1,-1), 0),
+            ]))
+            
+            sig_data = [[emp_sig_block, supervisor_sig_block]]
             sig_table = Table(sig_data, colWidths=[8.5*cm, 8.5*cm])
         else:
-            sig_data = [[emp_cell_content]]
+            sig_data = [[emp_sig_block]]
             sig_table = Table(sig_data, colWidths=[17*cm])
             
         sig_table.setStyle(TableStyle([
