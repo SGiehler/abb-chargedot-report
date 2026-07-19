@@ -315,18 +315,25 @@ class PDFReportGenerator:
             except Exception as e:
                 print(f"Fehler beim Laden des Unterschriftenbildes: {e}")
 
-        # Mitarbeiter Unterschriften-Block als Tabelle für perfektes Alignment und Unterstreichung
+        # Mitarbeiter Unterschriften-Block als Tabelle (2 Zeilen für direktes Aufliegen auf der Linie)
         emp_data = [
-            ["", "", sig_img_flowable if sig_img_flowable else Spacer(1, 1.5*cm)],
-            [Paragraph(sig_date, body_style), "", ""],
-            [Paragraph("Datum, Unterschrift Mitarbeiter", body_style), "", ""]
+            [
+                Paragraph(sig_date, body_style), 
+                "", 
+                sig_img_flowable if sig_img_flowable else Spacer(1, 1.5*cm)
+            ],
+            [
+                Paragraph("Datum, Unterschrift Mitarbeiter", body_style), 
+                "", 
+                ""
+            ]
         ]
         emp_sig_block = Table(emp_data, colWidths=[2.2*cm, 0.4*cm, 5.4*cm])
         emp_sig_block.setStyle(TableStyle([
-            ('SPAN', (0, 2), (2, 2)),
+            ('SPAN', (0, 1), (2, 1)),
             ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
-            ('LINEBELOW', (0, 1), (0, 1), 0.5, colors.HexColor('#475569')), # Linie unter Datum
-            ('LINEBELOW', (2, 1), (2, 1), 0.5, colors.HexColor('#475569')), # Linie unter Unterschrift
+            ('LINEBELOW', (0, 0), (0, 0), 0.5, colors.HexColor('#475569')), # Linie unter Datum (Zeile 0)
+            ('LINEBELOW', (2, 0), (2, 0), 0.5, colors.HexColor('#475569')), # Linie unter Unterschrift (Zeile 0)
             ('LEFTPADDING', (0,0), (-1,-1), 0),
             ('RIGHTPADDING', (0,0), (-1,-1), 0),
             ('BOTTOMPADDING', (0,0), (-1,-1), 2),
@@ -337,16 +344,23 @@ class PDFReportGenerator:
         if self.enable_supervisor_sig:
             # Vorgesetzten Unterschriften-Block
             supervisor_data = [
-                ["", "", Spacer(1, 1.5*cm)],
-                ["", "", ""],
-                [Paragraph("Datum, Unterschrift Vorgesetzter", body_style), "", ""]
+                [
+                    "", 
+                    "", 
+                    Spacer(1, 1.5*cm)
+                ],
+                [
+                    Paragraph("Datum, Unterschrift Vorgesetzter", body_style), 
+                    "", 
+                    ""
+                ]
             ]
             supervisor_sig_block = Table(supervisor_data, colWidths=[2.2*cm, 0.4*cm, 5.4*cm])
             supervisor_sig_block.setStyle(TableStyle([
-                ('SPAN', (0, 2), (2, 2)),
+                ('SPAN', (0, 1), (2, 1)),
                 ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
-                ('LINEBELOW', (0, 1), (0, 1), 0.5, colors.HexColor('#475569')), # Linie unter Datum
-                ('LINEBELOW', (2, 1), (2, 1), 0.5, colors.HexColor('#475569')), # Linie unter Unterschrift
+                ('LINEBELOW', (0, 0), (0, 0), 0.5, colors.HexColor('#475569')), # Linie unter Datum
+                ('LINEBELOW', (2, 0), (2, 0), 0.5, colors.HexColor('#475569')), # Linie unter Unterschrift
                 ('LEFTPADDING', (0,0), (-1,-1), 0),
                 ('RIGHTPADDING', (0,0), (-1,-1), 0),
                 ('BOTTOMPADDING', (0,0), (-1,-1), 2),
