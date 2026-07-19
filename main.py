@@ -107,30 +107,29 @@ async def generate_reports(
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
 
+        local_output_dir = Config.OUTPUT_DIR
+        local_output_dir.mkdir(parents=True, exist_ok=True)
+
         if len(generated_files) == 1:
             # Nur ein PDF erzeugt -> direkt zurückgeben
             target_pdf = generated_files[0]
-            # Wir erstellen eine Kopie des PDFs im konfigurierten lokalen Output-Ordner zur Aufbewahrung
-            local_output_dir = Config.OUTPUT_DIR
-            local_output_dir.mkdir(parents=True, exist_ok=True)
             local_pdf_path = local_output_dir / target_pdf.name
             local_pdf_path.write_bytes(target_pdf.read_bytes())
             
+            # Temporäres Verzeichnis manuell bereinigen, da wir das PDF kopiert haben
+            temp_dir.cleanup()
+
             return FileResponse(
-                path=str(target_pdf),
-                filename=target_pdf.name,
+                path=str(local_pdf_path),
+                filename=local_pdf_path.name,
                 media_type="application/pdf"
             )
         else:
             # Mehrere PDFs erzeugt -> als ZIP-Archiv packen
             zip_filename = "Ladeberichte.zip"
-            zip_path = temp_dir_path / zip_filename
-            
-            # Kopien im lokalen Output-Ordner sichern
-            local_output_dir = Config.OUTPUT_DIR
-            local_output_dir.mkdir(parents=True, exist_ok=True)
+            local_zip_path = local_output_dir / zip_filename
 
-            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            with zipfile.ZipFile(local_zip_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
                 for pdf_file in generated_files:
                     # In ZIP packen
                     zip_file.write(pdf_file, arcname=pdf_file.name)
@@ -138,8 +137,11 @@ async def generate_reports(
                     local_pdf_path = local_output_dir / pdf_file.name
                     local_pdf_path.write_bytes(pdf_file.read_bytes())
 
+            # Temporäres Verzeichnis manuell bereinigen, da wir das ZIP kopiert/erstellt haben
+            temp_dir.cleanup()
+
             return FileResponse(
-                path=str(zip_path),
+                path=str(local_zip_path),
                 filename=zip_filename,
                 media_type="application/zip"
             )
