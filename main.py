@@ -69,6 +69,7 @@ async def generate_reports(
     employee_name: str = Form(...),
     license_plate: str = Form(""),
     price_per_kwh: float = Form(0.2755),
+    enable_supervisor: bool = Form(False),  # Option für Vorgesetzten
     months: str = Form(...)  # JSON-kodiertes Array von Monaten, z.B. '["2026-06","2026-07"]'
 ):
     """Generiert PDF-Reports für die ausgewählten Monate."""
@@ -107,7 +108,7 @@ async def generate_reports(
             price_per_kwh=price_per_kwh,
             employee_name=employee_name,
             license_plate=license_plate,
-            enable_supervisor_sig=Config.ENABLE_SUPERVISOR_SIGNATURE,
+            enable_supervisor_sig=enable_supervisor,
             signature_image_path=sig_image_path
         )
 
