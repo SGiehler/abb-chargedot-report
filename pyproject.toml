@@ -1,6 +1,6 @@
 [project]
 name = "abb-chargedot-report"
-version = "1.0.1"
+version = "1.0.2"
 description = "Generiert PDF-Reports für Firmenwagen-Ladesessions aus ABB/Chargedot CSV-Dateien"
 readme = "README.md"
 requires-python = ">=3.10"
