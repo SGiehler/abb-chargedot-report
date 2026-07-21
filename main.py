@@ -124,7 +124,7 @@ async def generate_reports(
         if sig_image_path and os.path.exists(sig_image_path):
             os.remove(sig_image_path)
 
-        local_output_dir = Config.OUTPUT_DIR
+        local_output_dir = Config.get_output_dir()
         local_output_dir.mkdir(parents=True, exist_ok=True)
 
         if len(generated_files) == 1:
@@ -194,10 +194,10 @@ def run_cli(args):
             print(f"Fehler: Datei '{args.csv}' existiert nicht.")
             sys.exit(1)
 
-    employee = args.employee or Config.EMPLOYEE_NAME
-    license_plate = args.license_plate or Config.LICENSE_PLATE
-    price = args.price if args.price is not None else Config.PRICE_PER_KWH
-    output_dir = Path(args.output_dir or Config.OUTPUT_DIR)
+    employee = args.employee or Config.get_employee_name()
+    license_plate = args.license_plate or Config.get_license_plate()
+    price = args.price if args.price is not None else Config.get_price_per_kwh()
+    output_dir = Path(args.output_dir or Config.get_output_dir())
 
     print(f"Fahrer: {employee}")
     if license_plate:
@@ -207,7 +207,7 @@ def run_cli(args):
     print("-" * 50)
 
     try:
-        enable_supervisor = args.enable_supervisor or Config.ENABLE_SUPERVISOR_SIGNATURE
+        enable_supervisor = args.enable_supervisor or Config.get_enable_supervisor_signature()
         generator = PDFReportGenerator(
             csv_path=csv_path,
             price_per_kwh=price,

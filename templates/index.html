@@ -380,20 +380,34 @@
     let currentFile = null;
 
     // Standardkonfiguration beim Laden abrufen
-    window.addEventListener('DOMContentLoaded', async () => {
+    async function loadConfig() {
         try {
             const response = await fetch('/config');
             if (response.ok) {
                 const config = await response.json();
-                document.getElementById('employee_name').value = config.employee_name || '';
-                document.getElementById('license_plate').value = config.license_plate || '';
-                document.getElementById('price_per_kwh').value = config.price_per_kwh || 0.2755;
-                document.getElementById('enable_supervisor').checked = config.enable_supervisor_signature || false;
+                if (config.employee_name) {
+                    document.getElementById('employee_name').value = config.employee_name;
+                }
+                if (config.license_plate) {
+                    document.getElementById('license_plate').value = config.license_plate;
+                }
+                if (config.price_per_kwh !== undefined && config.price_per_kwh !== null) {
+                    document.getElementById('price_per_kwh').value = config.price_per_kwh;
+                }
+                if (config.enable_supervisor_signature !== undefined) {
+                    document.getElementById('enable_supervisor').checked = config.enable_supervisor_signature;
+                }
             }
         } catch (err) {
             console.error('Konnte Config nicht laden:', err);
         }
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', loadConfig);
+    } else {
+        loadConfig();
+    }
 
     // Drag and Drop Events
     dropZone.addEventListener('click', () => fileInput.click());
